@@ -25,6 +25,8 @@ npx tsc --noEmit                             # Type-check the Worker
 
 Prettier enforces formatting on every commit (`pnpm format:check` runs in the pre-commit hook). Config: no semis, trailing commas, 100-char print width. Run `pnpm format` to auto-fix before committing.
 
+No section-header comments (`// ── Foo ────`). Comments only where behavior is non-obvious.
+
 Pre-commit hooks are managed by **lefthook** (`lefthook.yml`). They run lint + both typechecks in parallel before every commit.
 
 D1 migrations:

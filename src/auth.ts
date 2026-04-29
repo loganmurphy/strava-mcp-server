@@ -32,7 +32,6 @@ export interface StravaAuthEnv {
   STRAVA_CLIENT_SECRET: string
 }
 
-/** Returns a valid Strava access token, refreshing if near expiry. */
 export async function getAccessToken(env: StravaAuthEnv): Promise<string> {
   const cached = await env.OAUTH_KV.get(ACCESS_TOKEN_KEY)
   if (cached) {
@@ -52,11 +51,7 @@ export async function getAccessToken(env: StravaAuthEnv): Promise<string> {
   return refreshAccessToken(env, refreshToken)
 }
 
-/**
- * Exchanges a refresh token for a new access token, writes both back to KV.
- * Strava may rotate the refresh token on use — we always write back whatever
- * the response includes.
- */
+// Strava may rotate the refresh token on use — always write back whatever the response includes.
 export async function refreshAccessToken(env: StravaAuthEnv, refreshToken: string): Promise<string> {
   const res = await fetch(REFRESH_URL, {
     method: "POST",

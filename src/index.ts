@@ -73,7 +73,6 @@ function toolResult(id: string | number | null, data: unknown): Response {
   )
 }
 
-// Parse comma-separated stream_keys arg, validating each key against the known list.
 function parseStreamKeys(raw: string | undefined): StreamKey[] {
   if (!raw) return undefined as unknown as StreamKey[]
   return raw
@@ -81,8 +80,6 @@ function parseStreamKeys(raw: string | undefined): StreamKey[] {
     .map((k) => k.trim())
     .filter((k): k is StreamKey => (STREAM_KEYS as readonly string[]).includes(k))
 }
-
-// ── Tool handlers ─────────────────────────────────────────────────────────────
 
 async function handleListActivities(
   id: string | number | null,
@@ -171,8 +168,6 @@ async function handleSingleton(
   if (!skipCache) ctx.waitUntil(setCached(env.DB, cacheType, SINGLETON_KEY, data))
   return toolResult(id, { ...data, _cache: "miss" })
 }
-
-// ── MCP handler ───────────────────────────────────────────────────────────────
 
 export async function handleMcp(
   request: Request,

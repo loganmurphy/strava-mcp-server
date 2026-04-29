@@ -1,10 +1,3 @@
-// Cache TTLs by type.
-//
-// Activity lists use a short TTL because a new activity (e.g. just finished)
-// may appear in the range within minutes. Detail, streams, and zone data are
-// stable once written; athlete stats update after each activity but an hour
-// of staleness is acceptable for a personal tool.
-
 const SCHEMA_VERSION = 1
 
 const TTL_MS: Record<string, number> = {
@@ -24,15 +17,12 @@ function isStale(fetchedAt: number, cacheType: string): boolean {
   return Date.now() - fetchedAt > ttlFor(cacheType)
 }
 
-/** Cache key for singleton resources (athlete profile, stats, zones). */
 export const SINGLETON_KEY = "__singleton__"
 
-/** Build the cache key for an activity streams request. */
 export function makeStreamKey(activityId: string, streamKeys: string[]): string {
   return `${activityId}:${[...streamKeys].sort().join(",")}`
 }
 
-/** Returns the cached value, or null on miss or staleness. */
 export async function getCached(
   db: D1Database,
   cacheType: string,
@@ -50,7 +40,6 @@ export async function getCached(
   return JSON.parse(row.data)
 }
 
-/** Upserts a value into the cache. */
 export async function setCached(
   db: D1Database,
   cacheType: string,

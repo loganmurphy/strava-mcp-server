@@ -3,10 +3,6 @@ import { getAccessToken, type StravaAuthEnv } from "./auth"
 const STRAVA_BASE = "https://www.strava.com/api/v3"
 const MAX_RETRIES = 2
 
-// stravaFetch retries up to MAX_RETRIES times on transient failures.
-// 429 → respects Retry-After header (capped at 60 s); 5xx → exponential backoff (1 s, 2 s).
-// 401 and other 4xx throw immediately without retrying.
-
 export type StravaItem = Record<string, unknown>
 
 export interface RateLimitInfo {
@@ -74,7 +70,6 @@ async function stravaFetch(
   throw new Error("Strava API request failed after retries")
 }
 
-// Date helpers — Strava's before/after params are Unix timestamps.
 function dateToUnix(dateStr: string, endOfDay = false): number {
   const d = new Date(dateStr + "T00:00:00Z")
   if (endOfDay) d.setUTCDate(d.getUTCDate() + 1) // exclusive end = start of next day
@@ -89,23 +84,18 @@ function defaultBefore(): number {
   return Math.floor((Date.now() + 86_400_000) / 1000) // tomorrow, to include today
 }
 
-// Strip high-resolution time-series arrays from stream data before caching.
-// These can be tens of thousands of points — too large for LLM context.
-// Summary stats (avg, max, min) are preserved.
+// Keeps metadata (series_type, original_size, resolution) — drops the raw data array.
 export function stripStreamNoise(stream: StravaItem): StravaItem {
   const { data: _data, ...rest } = stream
   return rest
 }
 
-// Strip large embedded objects from activity detail that don't add LLM value.
 export function stripActivityNoise(activity: StravaItem): StravaItem {
   const result = { ...activity }
   // map is a large polyline object useful for rendering but not for text analysis
   delete result["map"]
   return result
 }
-
-// ── Athlete ─────────────────────────────────────────────────────────────────
 
 export async function getAthleteProfile(
   env: StravaAuthEnv,
@@ -116,7 +106,6 @@ export async function getAthleteProfile(
 export async function getAthleteStats(
   env: StravaAuthEnv,
 ): Promise<StravaResponse<StravaItem>> {
-  // Requires athlete ID — fetch profile first to get it.
   const profile = await getAthleteProfile(env)
   const athleteId = (profile.data as StravaItem)["id"]
   return stravaFetch(env, `/athletes/${athleteId}/stats`) as Promise<StravaResponse<StravaItem>>
@@ -127,8 +116,6 @@ export async function getAthleteZones(
 ): Promise<StravaResponse<StravaItem>> {
   return stravaFetch(env, "/athlete/zones") as Promise<StravaResponse<StravaItem>>
 }
-
-// ── Activities ───────────────────────────────────────────────────────────────
 
 export async function listActivities(
   env: StravaAuthEnv,
@@ -156,7 +143,6 @@ export async function getActivityDetail(
   return { data: stripActivityNoise(resp.data as StravaItem), rateLimit: resp.rateLimit }
 }
 
-// Stream keys supported by Strava API.
 export const STREAM_KEYS = [
   "time",
   "distance",
@@ -173,8 +159,7 @@ export const STREAM_KEYS = [
 
 export type StreamKey = (typeof STREAM_KEYS)[number]
 
-// Default stream keys — exclude latlng (privacy) and large arrays by default.
-// Caller can override with includeKeys.
+// latlng excluded by default — contains GPS traces.
 const DEFAULT_STREAM_KEYS: StreamKey[] = [
   "time",
   "distance",
@@ -193,7 +178,6 @@ export async function getActivityStreams(
   const keys = includeKeys.join(",")
   const params = new URLSearchParams({ keys, key_by_type: "true" })
   const resp = await stravaFetch(env, `/activities/${activityId}/streams`, params)
-  // Strip raw data arrays — keep only summary metadata per stream type
   const streams = resp.data as Record<string, StravaItem>
   const stripped = Object.fromEntries(
     Object.entries(streams).map(([k, v]) => [k, stripStreamNoise(v)]),
