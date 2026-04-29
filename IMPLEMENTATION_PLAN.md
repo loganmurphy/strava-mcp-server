@@ -53,7 +53,7 @@ A self-hosted Cloudflare Worker MCP server exposing Strava activity data as tool
 
 ### Areas to improve — fix in this build
 
-1. **No retry/backoff on external API calls.** A transient 429 or 502 fails the entire tool call. Strava has tighter rate limits (100 / 15 min) — we need exponential backoff with respect for `Retry-After`.
+1. ~~**No retry/backoff on external API calls.**~~ ✅ Fixed in `oura-mcp-server` (`fix/security-and-retry`): exponential backoff on 5xx (1s, 2s), 429 respects `Retry-After` (capped 60s), max 2 retries. Port `ouraget` pattern directly to `stravaFetch` — Strava also needs `X-RateLimit-Usage` header capture added on top.
 
 2. **No structured error context.** Errors throw plain strings. Adding a request ID and including it in error responses makes Cloudflare dashboard log correlation trivial.
 
@@ -242,9 +242,9 @@ The MCP server holds the user's full Strava token. It can read private activitie
 - [ ] `src/strava.ts` — one function per endpoint we expose
 - [ ] Shared `stravaFetch(env, path, params)` that:
   - Calls `getAccessToken(env)` for auth
-  - Implements retry on 429 with `Retry-After` respect (max 2 retries)
-  - Surfaces a clear "token expired/revoked" message on 401 (similar to Oura's helpful error)
-  - Captures `X-RateLimit-Usage` from response, attaches to result
+  - Retry/backoff pattern: port directly from `ouraget` in oura template (already tested)
+  - Surfaces a clear "token expired/revoked" message on 401
+  - Captures `X-RateLimit-Usage` and `X-RateLimit-Limit` response headers, attaches as `_rate_limit` to result
 - [ ] Stream noise stripping (downsample / summary stats)
 - [ ] Unit tests
 
@@ -253,7 +253,7 @@ The MCP server holds the user's full Strava token. It can read private activitie
 - [ ] `src/index.ts` — copy from oura template
 - [ ] `src/tools.ts` — define 6 tools
 - [ ] `src/cache.ts` — adapt to multi-key-type schema
-- [ ] `src/ui.ts` — copy login/success pages, swap branding
+- [ ] `src/ui.ts` — copy login/success pages, swap branding (security headers via `HTML_HEADERS` constant already in template — copy as-is)
 - [ ] `migrations/001_init.sql` — new schema
 - [ ] Wire up `handleMcp` for the new tool registry
 
