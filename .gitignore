@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+
+# pnpm
+.pnp.*
+
+# Wrangler local dev state (D1 SQLite, KV, R2, etc.)
+.wrangler/
+
+# Local secrets — never commit
+.dev.vars
+.dev.vars.bak
+# Bootstrap script state (CF account ID) — not Worker bindings
+.bootstrap-state
+
+# TypeScript
+*.tsbuildinfo
+dist/
+
+# Generated — run `pnpm cf-typegen` to recreate
+worker-configuration.d.ts
+
+# Logs
+*.log
+
+# Wrangler config contains personal infrastructure IDs — copy from wrangler.example.jsonc
+wrangler.jsonc
+wrangler.jsonc.bak
+
+# Claude Code local config
+.claude/settings.local.json
+
+# OS
+.DS_Store
+
+# Test coverage output
+coverage/

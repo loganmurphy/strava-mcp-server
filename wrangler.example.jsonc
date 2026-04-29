@@ -1,0 +1,62 @@
+{
+  "name": "strava-mcp-server",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-04-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+
+  // Disable preview URLs — keeps only the production workers.dev URL active.
+  "preview_urls": false,
+
+  // OAuth token storage (required by @cloudflare/workers-oauth-provider).
+  // Also stores Strava access/refresh tokens under the `strava:` key prefix.
+  // Create with: npx wrangler kv namespace create OAUTH_KV
+  "kv_namespaces": [
+    {
+      "binding": "OAUTH_KV",
+      "id": "YOUR_KV_NAMESPACE_ID"
+    }
+  ],
+
+  // D1 cache database.
+  // `wrangler dev` always binds to a local Miniflare SQLite store — it never
+  // reads or writes the remote D1. Only `wrangler deploy` (and
+  // `wrangler d1 execute --remote`) touch the production database.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "strava-cache",
+      "database_id": "YOUR_DATABASE_ID"
+    }
+  ],
+
+  // Rate limiting on the /authorize login page — prevents brute-force
+  // password attempts. 10 POST requests per IP per 60 seconds.
+  "ratelimits": [
+    {
+      "name": "RATE_LIMITER",
+      "namespace_id": "1001",
+      "simple": {
+        "limit": 10,
+        "period": 60
+      }
+    }
+  ],
+
+  // Observability — enables `wrangler tail` and the Logs tab in the CF dashboard.
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true
+    }
+  }
+
+  // Secrets set via: wrangler secret put <NAME>
+  //   STRAVA_CLIENT_ID      — from strava.com/settings/api
+  //   STRAVA_CLIENT_SECRET  — from strava.com/settings/api
+  //   MCP_AUTH_PASSWORD     — password for the MCP login page
+  //
+  // Strava tokens are stored in OAUTH_KV at runtime (not as secrets) so the
+  // Worker can refresh them without redeployment:
+  //   strava:access_token   — { token, expires_at } JSON, written by bootstrap
+  //   strava:refresh_token  — string, written by bootstrap, updated on refresh
+}

@@ -1,0 +1,3 @@
+STRAVA_CLIENT_ID=your_strava_client_id
+STRAVA_CLIENT_SECRET=your_strava_client_secret
+MCP_AUTH_PASSWORD=your_mcp_password
