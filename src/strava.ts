@@ -3,6 +3,10 @@ import { getAccessToken, type StravaAuthEnv } from "./auth"
 const STRAVA_BASE = "https://www.strava.com/api/v3"
 const MAX_RETRIES = 2
 
+// stravaFetch retries up to MAX_RETRIES times on transient failures.
+// 429 → respects Retry-After header (capped at 60 s); 5xx → exponential backoff (1 s, 2 s).
+// 401 and other 4xx throw immediately without retrying.
+
 export type StravaItem = Record<string, unknown>
 
 export interface RateLimitInfo {
