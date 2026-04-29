@@ -83,10 +83,26 @@ describe("getCached", () => {
     expect(result).toEqual(payload)
   })
 
+  it("uses 1h default TTL for unknown cache types", async () => {
+    const payload = { id: 1 }
+    // fresh (30m ago) → should be returned despite unknown type
+    const db = makeDb({ data: JSON.stringify(payload), fetched_at: Date.now() - 30 * 60 * 1000 })
+    const result = await getCached(db, "unknown_type", "key")
+    expect(result).toEqual(payload)
+  })
+
+  it("treats unknown cache type as stale after 1h", async () => {
+    const payload = { id: 1 }
+    const staleTime = Date.now() - 61 * 60 * 1000 // 61m ago
+    const db = makeDb({ data: JSON.stringify(payload), fetched_at: staleTime })
+    const result = await getCached(db, "unknown_type", "key")
+    expect(result).toBeNull()
+  })
+
   it("queries with schema_version in the WHERE clause", async () => {
     const db = makeDb(null)
     await getCached(db, "athlete", SINGLETON_KEY)
-    const sql: string = db.prepare.mock.calls[0][0]
+    const sql: string = db.prepare.mock.calls[0]![0]
     expect(sql).toContain("schema_version")
   })
 
@@ -120,14 +136,14 @@ describe("setCached", () => {
   it("includes schema_version in the INSERT", async () => {
     const db = makeDb()
     await setCached(db, "zones", SINGLETON_KEY, { heart_rate: {} })
-    const sql: string = db.prepare.mock.calls[0][0]
+    const sql: string = db.prepare.mock.calls[0]![0]
     expect(sql).toContain("schema_version")
   })
 
   it("uses INSERT OR REPLACE to upsert", async () => {
     const db = makeDb()
     await setCached(db, "athlete", SINGLETON_KEY, { id: 1 })
-    const sql: string = db.prepare.mock.calls[0][0]
+    const sql: string = db.prepare.mock.calls[0]![0]
     expect(sql.toUpperCase()).toContain("INSERT OR REPLACE")
   })
 
@@ -136,7 +152,7 @@ describe("setCached", () => {
     const db = makeDb()
     await setCached(db, "stats", SINGLETON_KEY, {})
     const after = Date.now()
-    const boundArgs = (db as unknown as { bind: ReturnType<typeof vi.fn> }).bind.mock.calls[0]
+    const boundArgs = (db as unknown as { bind: ReturnType<typeof vi.fn> }).bind.mock.calls[0]!
     const fetchedAt = boundArgs.find((a: unknown) => typeof a === "number" && a >= before && a <= after)
     expect(fetchedAt).toBeDefined()
   })

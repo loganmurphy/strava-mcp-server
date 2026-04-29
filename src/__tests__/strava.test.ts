@@ -140,6 +140,27 @@ describe("rate limit parsing", () => {
     const result = await getAthleteProfile(makeEnv())
     expect(result.rateLimit).toBeNull()
   })
+
+  it("returns null rateLimit when header values are malformed (NaN)", async () => {
+    mockFetch(200, { id: 42 }, {
+      "X-RateLimit-Usage": "abc,100",
+      "X-RateLimit-Limit": "100,1000",
+    })
+    const result = await getAthleteProfile(makeEnv())
+    expect(result.rateLimit).toBeNull()
+  })
+})
+
+describe("429 without Retry-After header", () => {
+  it("retries using default 60s when Retry-After header is absent", async () => {
+    const spy = mockFetchSequence([
+      { status: 429, body: "rate limited" }, // no Retry-After header
+      { status: 200, body: { id: 7 } },
+    ])
+    const result = await getAthleteProfile(makeEnv())
+    expect(result.data).toMatchObject({ id: 7 })
+    expect(spy).toHaveBeenCalledTimes(2)
+  })
 })
 
 describe("401 handling", () => {
