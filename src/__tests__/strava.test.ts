@@ -134,7 +134,7 @@ describe("429 without Retry-After header", () => {
 describe("401 handling", () => {
   it("throws a helpful re-authorize message on 401", async () => {
     mockFetch(401, { message: "Authorization Error" })
-    await expect(getAthleteProfile(makeEnv())).rejects.toThrow("pnpm bootstrap")
+    await expect(getAthleteProfile(makeEnv())).rejects.toThrow("Strava API 401")
   })
 
   it("does not retry on 401", async () => {

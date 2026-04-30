@@ -48,8 +48,9 @@ async function stravaFetch(
 
     if (res.status === 401) {
       throw new Error(
-        "Strava rejected the access token (401). The token may have been revoked.\n\n" +
-          "Fix: re-authorize by running `pnpm bootstrap`.",
+        `Strava API 401: ${text}\n\n` +
+          "This usually means the token is expired/revoked or lacks the required scope.\n" +
+          "Fix: re-authorize by running `pnpm connect-local` (local) or `pnpm bootstrap` (production).",
       )
     }
 
