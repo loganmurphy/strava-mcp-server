@@ -114,18 +114,18 @@ async function main() {
   const accessTokenPayload = JSON.stringify({ token: tokens.accessToken, expires_at: tokens.expiresAt })
   const putAccess = spawnSync(
     "npx",
-    ["wrangler", "kv", "key", "put", "strava:access_token", accessTokenPayload, "--local"],
+    ["wrangler", "kv", "key", "put", "--binding", "OAUTH_KV", "--local", "strava:access_token", accessTokenPayload],
     { stdio: ["ignore", "pipe", "pipe"], encoding: "utf8" },
   )
-  if (putAccess.status !== 0) warn("Failed to store access token in local KV — you can restart after `pnpm dev` is running.")
+  if (putAccess.status !== 0) warn(`Failed to store access token in local KV: ${putAccess.stderr?.trim()}`)
   else ok("strava:access_token stored in local KV")
 
   const putRefresh = spawnSync(
     "npx",
-    ["wrangler", "kv", "key", "put", "strava:refresh_token", tokens.refreshToken, "--local"],
+    ["wrangler", "kv", "key", "put", "--binding", "OAUTH_KV", "--local", "strava:refresh_token", tokens.refreshToken],
     { stdio: ["ignore", "pipe", "pipe"], encoding: "utf8" },
   )
-  if (putRefresh.status !== 0) warn("Failed to store refresh token in local KV.")
+  if (putRefresh.status !== 0) warn(`Failed to store refresh token in local KV: ${putRefresh.stderr?.trim()}`)
   else ok("strava:refresh_token stored in local KV")
 
   console.log()
