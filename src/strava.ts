@@ -54,6 +54,10 @@ async function stravaFetch(
       )
     }
 
+    if (res.status === 402) {
+      throw new Error("This Strava feature requires a Summit subscription (paid upgrade).")
+    }
+
     if ((res.status === 429 || res.status >= 500) && attempt < MAX_RETRIES) {
       const delayMs =
         res.status === 429

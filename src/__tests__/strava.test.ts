@@ -145,6 +145,19 @@ describe("401 handling", () => {
   })
 })
 
+describe("402 handling", () => {
+  it("throws a Summit subscription message on 402", async () => {
+    mockFetch(402, { message: "Payment Required" })
+    await expect(getAthleteProfile(makeEnv())).rejects.toThrow("Summit subscription")
+  })
+
+  it("does not retry on 402", async () => {
+    const spy = mockFetch(402, { message: "Payment Required" })
+    await expect(getAthleteProfile(makeEnv())).rejects.toThrow()
+    expect(spy).toHaveBeenCalledTimes(1)
+  })
+})
+
 describe("retry behavior", () => {
   it("retries on 500 and succeeds on third attempt", async () => {
     const spy = mockFetchSequence([
