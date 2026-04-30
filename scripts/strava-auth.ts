@@ -65,9 +65,9 @@ function waitForCode(): Promise<string> {
         return
       }
 
-      res.writeHead(200, { "Content-Type": "text/html" })
+      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" })
       res.end(`<!DOCTYPE html>
-<html><head><title>Strava MCP — Authorized</title>
+<html><head><meta charset="utf-8"><title>Strava MCP — Authorized</title>
 <style>body{font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f5f5f5}
 .card{background:white;border-radius:12px;padding:2rem;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.08);max-width:360px}</style>
 </head><body><div class="card"><h2>✓ Connected to Strava</h2>
