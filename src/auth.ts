@@ -30,6 +30,10 @@ export interface StravaAuthEnv {
   OAUTH_KV: KVNamespace
   STRAVA_CLIENT_ID: string
   STRAVA_CLIENT_SECRET: string
+  // Local dev only — set in .dev.vars by `pnpm connect-local` as a fallback
+  // when the local KV store hasn't been seeded. After the first successful
+  // refresh the rotated token is written to KV and this var is no longer used.
+  STRAVA_REFRESH_TOKEN?: string
 }
 
 export async function getAccessToken(env: StravaAuthEnv): Promise<string> {
@@ -41,10 +45,10 @@ export async function getAccessToken(env: StravaAuthEnv): Promise<string> {
     }
   }
 
-  const refreshToken = await env.OAUTH_KV.get(REFRESH_TOKEN_KEY)
+  const refreshToken = (await env.OAUTH_KV.get(REFRESH_TOKEN_KEY)) ?? env.STRAVA_REFRESH_TOKEN ?? null
   if (!refreshToken) {
     throw new Error(
-      "Strava refresh token not found in KV. Run `pnpm bootstrap` to authorize this server with Strava.",
+      "Strava refresh token not found. Run `pnpm connect-local` (local dev) or `pnpm bootstrap` (production).",
     )
   }
 

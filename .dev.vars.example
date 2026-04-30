@@ -1,3 +1,4 @@
 STRAVA_CLIENT_ID=your_strava_client_id
 STRAVA_CLIENT_SECRET=your_strava_client_secret
 MCP_AUTH_PASSWORD=your_mcp_password
+STRAVA_REFRESH_TOKEN=  # written by pnpm connect-local; bootstraps local KV on first request

@@ -110,23 +110,11 @@ async function main() {
   const tokens = await runStravaOAuth(clientId, clientSecret)
   ok("Strava tokens obtained")
 
-  // Write tokens to local Miniflare KV
-  const accessTokenPayload = JSON.stringify({ token: tokens.accessToken, expires_at: tokens.expiresAt })
-  const putAccess = spawnSync(
-    "npx",
-    ["wrangler", "kv", "key", "put", "--binding", "OAUTH_KV", "--local", "strava:access_token", accessTokenPayload],
-    { stdio: ["ignore", "pipe", "pipe"], encoding: "utf8" },
-  )
-  if (putAccess.status !== 0) warn(`Failed to store access token in local KV: ${putAccess.stderr?.trim()}`)
-  else ok("strava:access_token stored in local KV")
-
-  const putRefresh = spawnSync(
-    "npx",
-    ["wrangler", "kv", "key", "put", "--binding", "OAUTH_KV", "--local", "strava:refresh_token", tokens.refreshToken],
-    { stdio: ["ignore", "pipe", "pipe"], encoding: "utf8" },
-  )
-  if (putRefresh.status !== 0) warn(`Failed to store refresh token in local KV: ${putRefresh.stderr?.trim()}`)
-  else ok("strava:refresh_token stored in local KV")
+  // Write the refresh token to .dev.vars so auth.ts can bootstrap local KV.
+  // On first request, the Worker refreshes using this token and writes both
+  // tokens to local KV — subsequent requests use KV directly.
+  saveDevVars(DEV_VARS_PATH, { STRAVA_REFRESH_TOKEN: tokens.refreshToken })
+  ok("STRAVA_REFRESH_TOKEN saved to .dev.vars")
 
   console.log()
   ok("Local setup complete!")

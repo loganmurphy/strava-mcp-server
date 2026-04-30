@@ -97,11 +97,25 @@ describe("getAccessToken", () => {
     expect(token).toBe(NEW_ACCESS_TOKEN)
   })
 
-  it("throws if no refresh token is stored", async () => {
+  it("throws if no refresh token in KV or env", async () => {
     const env = makeEnv({
       get: vi.fn().mockResolvedValue(null),
     })
-    await expect(getAccessToken(env)).rejects.toThrow("pnpm bootstrap")
+    await expect(getAccessToken(env)).rejects.toThrow("pnpm connect-local")
+  })
+
+  it("uses STRAVA_REFRESH_TOKEN env var when KV has no refresh token", async () => {
+    const env = makeEnv({
+      get: vi.fn().mockResolvedValue(null),
+    })
+    env.STRAVA_REFRESH_TOKEN = REFRESH_TOKEN
+    mockFetch(200, {
+      access_token: NEW_ACCESS_TOKEN,
+      refresh_token: NEW_REFRESH_TOKEN,
+      expires_at: FUTURE_EXPIRY,
+    })
+    const token = await getAccessToken(env)
+    expect(token).toBe(NEW_ACCESS_TOKEN)
   })
 })
 
