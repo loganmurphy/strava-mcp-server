@@ -92,8 +92,6 @@ describe("stripActivityNoise", () => {
   })
 })
 
-// ── stravaFetch (via public API functions) ────────────────────────────────────
-
 describe("rate limit parsing", () => {
   it("returns rate limit info when headers are present", async () => {
     mockFetch(200, { id: 42 }, RATE_LIMIT_HEADERS)
@@ -224,8 +222,6 @@ describe("getAthleteZones", () => {
     expect(spy.mock.calls[0]![0]).toContain("/athlete/zones")
   })
 })
-
-// ── Activity endpoints ────────────────────────────────────────────────────────
 
 describe("listActivities", () => {
   it("uses default date range when no dates provided", async () => {

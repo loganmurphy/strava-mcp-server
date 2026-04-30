@@ -18,8 +18,6 @@ beforeEach(() => {
   vi.restoreAllMocks()
 })
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
 describe("SINGLETON_KEY", () => {
   it("is a stable string", () => {
     expect(typeof SINGLETON_KEY).toBe("string")
@@ -96,8 +94,6 @@ describe("getCached", () => {
     expect(boundArgs).toContain("abc:time,heartrate")
   })
 })
-
-// ── setCached ─────────────────────────────────────────────────────────────────
 
 describe("setCached", () => {
   it("calls run on the prepared statement", async () => {
