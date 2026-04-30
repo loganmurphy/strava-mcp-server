@@ -18,8 +18,6 @@ Cloudflare Worker  (@cloudflare/workers-oauth-provider)
      └─ Strava API  fetched only on cache miss; auto-refreshes expired tokens
 ```
 
-Strava access tokens expire every 6 hours. The Worker refreshes them automatically via the stored refresh token — no redeployment required.
-
 ## Requirements
 
 - [Cloudflare account](https://dash.cloudflare.com/sign-up) (free tier)
@@ -49,7 +47,7 @@ Re-running is fully idempotent.
 ### Local dev first?
 
 ```bash
-pnpm connect-local   # runs Strava OAuth flow, applies local D1 schema, guides ngrok setup
+pnpm connect-local   # runs Strava OAuth flow, applies local D1 schema, writes tokens to .dev.vars
 pnpm dev             # keep running in a separate terminal
 ```
 
@@ -65,7 +63,7 @@ All clients connect to the same MCP endpoint. `pnpm bootstrap` copies this URL t
 https://strava-mcp-server.<your-subdomain>.workers.dev/mcp
 ```
 
-Customize → [Connectors](https://claude.ai/customize/connectors) → Add custom connector → paste URL → Connect → enter password → Authorize.
+Settings → [Connectors](https://claude.ai/settings/connectors) → Add custom connector → paste URL → Connect → enter password → Authorize.
 
 After connecting, click **Configure** on the Strava connector and set each tool to **Allow** — otherwise Claude may ask for permission on every use.
 
@@ -79,14 +77,8 @@ After connecting, click **Configure** on the Strava connector and set each tool 
 cp wrangler.example.jsonc wrangler.jsonc   # fill in YOUR_KV_NAMESPACE_ID + YOUR_DATABASE_ID
 pnpm install && pnpm cf-typegen
 cp .dev.vars.example .dev.vars             # fill in Strava credentials + MCP password
-npx wrangler d1 execute strava-cache --local --file=./migrations/001_init.sql
-pnpm dev   # http://localhost:8787
-```
-
-You also need to run the Strava OAuth flow to populate the local KV with tokens:
-
-```bash
-pnpm connect-local   # handles OAuth flow and writes tokens to local KV
+pnpm connect-local                         # Strava OAuth flow + D1 schema + writes refresh token
+pnpm dev                                   # http://localhost:8787
 ```
 
 ### Testing with ngrok
@@ -101,7 +93,7 @@ pnpm dev             # terminal 1
 ngrok http 8787      # terminal 2 → https://xxxx.ngrok-free.app
 ```
 
-Add `<ngrok-url>/mcp` as a custom connector at `claude.ai/customize/connectors`.
+Add `<ngrok-url>/mcp` as a custom connector at `claude.ai/settings/connectors`.
 
 > Free tier URLs change on restart — re-add the connector in Claude when that happens.
 
@@ -182,10 +174,9 @@ npx wrangler secret put STRAVA_CLIENT_ID
 npx wrangler secret put STRAVA_CLIENT_SECRET
 npx wrangler secret put MCP_AUTH_PASSWORD
 pnpm deploy
-# then write Strava tokens to KV manually:
-npx wrangler kv key put strava:access_token '{"token":"...","expires_at":...}' --namespace-id <kv-id>
-npx wrangler kv key put strava:refresh_token 'your_refresh_token' --namespace-id <kv-id>
 ```
+
+Then run `pnpm bootstrap` once to complete the Strava OAuth flow and write tokens to KV — or re-run just the OAuth step manually if you prefer.
 
 ---
 
@@ -193,14 +184,14 @@ npx wrangler kv key put strava:refresh_token 'your_refresh_token' --namespace-id
 
 All date params optional, default to last 7 days (YYYY-MM-DD). `end_date` is always **inclusive**.
 
-| Tool                        | Returns                                                  |
-| --------------------------- | -------------------------------------------------------- |
-| `strava_list_activities`    | Activity list with distance, time, HR, pace/power        |
-| `strava_get_activity`       | Full activity detail with laps, splits, and best efforts |
-| `strava_get_athlete_stats`  | YTD and all-time totals by sport                         |
-| `strava_get_athlete_zones`  | Athlete-level HR and power zones                         |
-| `strava_get_activity_zones` | Time-in-zone breakdown for a specific activity           |
-| `strava_get_gear`           | Gear details and total mileage by gear ID                |
+| Tool                        | Returns                                                             |
+| --------------------------- | ------------------------------------------------------------------- |
+| `strava_list_activities`    | Activity list with distance, time, HR, pace/power                   |
+| `strava_get_activity`       | Full activity detail with laps, splits, and best efforts            |
+| `strava_get_athlete_stats`  | YTD and all-time totals by sport                                    |
+| `strava_get_athlete_zones`  | Athlete-level HR and power zones                                    |
+| `strava_get_activity_zones` | Time-in-zone breakdown for a specific activity (requires Summit)    |
+| `strava_get_gear`           | Gear details and total mileage by gear ID                           |
 
 All tools accept `skip_cache` (bool) to force a fresh fetch.
 
@@ -208,15 +199,17 @@ All tools accept `skip_cache` (bool) to force a fresh fetch.
 
 ## Troubleshooting
 
-**Tools not appearing** — remove and re-add the connector at `claude.ai/customize/connectors`.
+**Tools not appearing** — remove and re-add the connector at `claude.ai/settings/connectors`.
 
-**Strava 401 / token rejected** — run `pnpm bootstrap` again to re-authorize with Strava.
+**Strava 401 / token rejected** — re-authorize: run `pnpm connect-local` (local dev) or `pnpm bootstrap` (production).
+
+**strava_get_activity_zones returns an error** — this endpoint requires a Strava Summit subscription. Free accounts get a 402 and a clear error message.
 
 **Today's activities missing** — Strava may not have synced yet. Use `skip_cache: true` to check.
 
 **Rotate MCP password** — `npx wrangler secret put MCP_AUTH_PASSWORD`, then `pnpm revoke` (invalidates Claude sessions so it re-auths with the new password; Strava tokens are preserved).
 
-**Port 9999 in use (bootstrap OAuth)** — close whatever is using it and re-run `pnpm bootstrap`.
+**Port 9999 in use (bootstrap OAuth)** — close whatever is using it and re-run.
 
 **`pnpm bootstrap` fails at Cloudflare login** — run `npx wrangler login` manually first.
 
