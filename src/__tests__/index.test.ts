@@ -27,6 +27,7 @@ function makeEnv(): Env {
   return {
     STRAVA_CLIENT_ID: "test-client-id",
     STRAVA_CLIENT_SECRET: "test-client-secret",
+    STRAVA_REFRESH_TOKEN: "",
     DB: {} as D1Database,
     OAUTH_KV: {} as KVNamespace,
     MCP_AUTH_PASSWORD: "test-password",
@@ -84,8 +85,6 @@ beforeEach(() => {
   vi.mocked(strava.getGear).mockResolvedValue(MOCK_RESP)
 })
 
-// ── Routing ───────────────────────────────────────────────────────────────────
-
 describe("routing", () => {
   it("OPTIONS /mcp returns 204 with CORS headers", async () => {
     const res = await worker.fetch(
@@ -137,8 +136,6 @@ describe("routing", () => {
     expect(res.status).toBe(200)
   })
 })
-
-// ── JSON-RPC protocol ─────────────────────────────────────────────────────────
 
 describe("initialize", () => {
   it("returns protocol version and server info", async () => {
@@ -211,8 +208,6 @@ describe("unknown tool", () => {
   })
 })
 
-// ── Cache behavior ────────────────────────────────────────────────────────────
-
 describe("cache hit", () => {
   it("returns cached data without calling Strava", async () => {
     vi.mocked(cache.getCached).mockResolvedValueOnce({ data: { id: 99 }, rateLimit: null })
@@ -271,8 +266,6 @@ describe("forceSkipCache flag", () => {
     expect(cache.getCached).not.toHaveBeenCalled()
   })
 })
-
-// ── Individual tool dispatch ──────────────────────────────────────────────────
 
 describe("strava_list_activities", () => {
   it("calls listActivities with date/page args and returns data", async () => {
@@ -342,8 +335,6 @@ describe("strava_get_gear", () => {
   })
 })
 
-// ── Error handling ────────────────────────────────────────────────────────────
-
 describe("Strava API error", () => {
   it("surfaces the error message in the tool response", async () => {
     vi.mocked(strava.getAthleteStats).mockRejectedValueOnce(
@@ -365,8 +356,6 @@ describe("Strava API error", () => {
   })
 })
 
-// ── HTML security headers ─────────────────────────────────────────────────────
-
 describe("HTML security headers", () => {
   it("login page includes CSP, nosniff, HSTS, and Referrer-Policy", async () => {
     const env = makeEnv()
@@ -385,8 +374,6 @@ describe("HTML security headers", () => {
     expect(res.headers.get("Referrer-Policy")).toBe("no-referrer")
   })
 })
-
-// ── defaultHandler routing ────────────────────────────────────────────────────
 
 describe("defaultHandler", () => {
   it("OPTIONS on non-mcp route returns 204", async () => {

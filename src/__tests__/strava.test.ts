@@ -20,6 +20,7 @@ function makeEnv(): StravaAuthEnv {
   return {
     STRAVA_CLIENT_ID: "test-client-id",
     STRAVA_CLIENT_SECRET: "test-client-secret",
+    STRAVA_REFRESH_TOKEN: "",
     OAUTH_KV: {} as KVNamespace,
   }
 }

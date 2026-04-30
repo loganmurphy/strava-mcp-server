@@ -88,23 +88,22 @@ async function handleListActivities(
   return toolResult(id, { ...data, _cache: "miss" })
 }
 
-async function handleGetActivity(
+async function handleKeyedFetch(
   id: string | number | null,
-  args: Record<string, unknown>,
+  cacheType: string,
+  cacheKey: string,
   env: Env,
   ctx: ExecutionContext,
   skipCache: boolean,
+  fetcher: () => Promise<{ data: unknown; rateLimit: unknown }>,
 ): Promise<Response> {
-  const activityId = args["activity_id"] as string
-
   if (!skipCache) {
-    const cached = await getCached(env.DB, "activity", activityId)
+    const cached = await getCached(env.DB, cacheType, cacheKey)
     if (cached !== null) return toolResult(id, { ...cached, _cache: "hit" })
   }
-
-  const resp = await getActivityDetail(env, activityId)
+  const resp = await fetcher()
   const data = { data: resp.data, rateLimit: resp.rateLimit }
-  if (!skipCache) ctx.waitUntil(setCached(env.DB, "activity", activityId, data))
+  if (!skipCache) ctx.waitUntil(setCached(env.DB, cacheType, cacheKey, data))
   return toolResult(id, { ...data, _cache: "miss" })
 }
 
@@ -173,37 +172,18 @@ export async function handleMcp(
           case "strava_list_activities":
             return await handleListActivities(id, toolArgs, env, ctx, skipCache)
           case "strava_get_activity":
-            return await handleGetActivity(id, toolArgs, env, ctx, skipCache)
+            return await handleKeyedFetch(id, "activity", toolArgs["activity_id"] as string, env, ctx, skipCache,
+              () => getActivityDetail(env, toolArgs["activity_id"] as string))
           case "strava_get_athlete_stats":
-            return await handleSingleton(id, "stats", env, ctx, skipCache, () =>
-              getAthleteStats(env),
-            )
+            return await handleSingleton(id, "stats", env, ctx, skipCache, () => getAthleteStats(env))
           case "strava_get_athlete_zones":
-            return await handleSingleton(id, "zones", env, ctx, skipCache, () =>
-              getAthleteZones(env),
-            )
-          case "strava_get_activity_zones": {
-            const activityId = toolArgs["activity_id"] as string
-            if (!skipCache) {
-              const cached = await getCached(env.DB, "activity_zones", activityId)
-              if (cached !== null) return toolResult(id, { ...cached, _cache: "hit" })
-            }
-            const resp = await getActivityZones(env, activityId)
-            const data = { data: resp.data, rateLimit: resp.rateLimit }
-            if (!skipCache) ctx.waitUntil(setCached(env.DB, "activity_zones", activityId, data))
-            return toolResult(id, { ...data, _cache: "miss" })
-          }
-          case "strava_get_gear": {
-            const gearId = toolArgs["gear_id"] as string
-            if (!skipCache) {
-              const cached = await getCached(env.DB, "gear", gearId)
-              if (cached !== null) return toolResult(id, { ...cached, _cache: "hit" })
-            }
-            const resp = await getGear(env, gearId)
-            const data = { data: resp.data, rateLimit: resp.rateLimit }
-            if (!skipCache) ctx.waitUntil(setCached(env.DB, "gear", gearId, data))
-            return toolResult(id, { ...data, _cache: "miss" })
-          }
+            return await handleSingleton(id, "zones", env, ctx, skipCache, () => getAthleteZones(env))
+          case "strava_get_activity_zones":
+            return await handleKeyedFetch(id, "activity_zones", toolArgs["activity_id"] as string, env, ctx, skipCache,
+              () => getActivityZones(env, toolArgs["activity_id"] as string))
+          case "strava_get_gear":
+            return await handleKeyedFetch(id, "gear", toolArgs["gear_id"] as string, env, ctx, skipCache,
+              () => getGear(env, toolArgs["gear_id"] as string))
           default:
             throw new Error(`Unknown tool: ${toolName}`)
         }

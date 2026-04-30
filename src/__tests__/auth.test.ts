@@ -16,6 +16,7 @@ function makeEnv(kvOverrides?: Partial<KVNamespace>): StravaAuthEnv {
   return {
     STRAVA_CLIENT_ID: CLIENT_ID,
     STRAVA_CLIENT_SECRET: CLIENT_SECRET,
+    STRAVA_REFRESH_TOKEN: "",
     OAUTH_KV: {
       get: vi.fn(),
       put: vi.fn().mockResolvedValue(undefined),

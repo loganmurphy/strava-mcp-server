@@ -88,12 +88,15 @@ Single-entry cache keyed by `(cache_type, cache_key)` — no per-day row merging
 
 - `activity_list` — 5m (new workout may just have synced)
 - `activity` — 24h (stable after creation)
+- `activity_zones` — 24h (stable after creation)
 - `stats` — 1h (updates after each activity)
+- `gear` — 1h (distance updates after each tagged activity)
 - `zones` — 24h (only changes when user edits settings)
 
 Cache keys:
 - `activity_list`: `{startDate}_{endDate}_p{page}_{perPage}` (default strings when absent)
-- `activity`: activity ID
+- `activity`, `activity_zones`: activity ID
+- `gear`: gear ID
 - `stats`, `zones`: `SINGLETON_KEY` (`__singleton__`)
 
 Cache bypass: `skip_cache: true` tool argument (per-call) or `?no_cache` query param (per-request).

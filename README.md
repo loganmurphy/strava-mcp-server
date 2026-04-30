@@ -14,7 +14,7 @@ Claude (web / desktop / mobile)
      │  OAuth 2.1 (PKCE) — password login
 Cloudflare Worker  (@cloudflare/workers-oauth-provider)
      ├─ KV       MCP OAuth tokens + Strava access/refresh tokens
-     ├─ D1       cache (5m activity lists / 24h activities / 1h stats & zones)
+     ├─ D1       cache (5m lists / 24h activities & zones / 1h stats & gear)
      └─ Strava API  fetched only on cache miss; auto-refreshes expired tokens
 ```
 
