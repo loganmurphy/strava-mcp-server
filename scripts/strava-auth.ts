@@ -11,8 +11,8 @@ import { c, info, ok } from "./prompts"
 
 const REDIRECT_URI = "http://localhost:9999/callback"
 const TOKEN_URL = "https://www.strava.com/oauth/token"
-// Scope: read profile/zones, read all activities (including private)
-const SCOPE = "read,activity:read_all"
+// read: basic profile; profile:read_all: zones; activity:read_all: private activities
+const SCOPE = "read,profile:read_all,activity:read_all"
 
 export interface StravaTokens {
   accessToken: string
