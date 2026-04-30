@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { getCached, setCached, makeStreamKey, SINGLETON_KEY } from "../cache"
+import { getCached, setCached, SINGLETON_KEY } from "../cache"
 
 // Minimal D1Database stub — we control what `first` and `run` return.
 function makeDb(firstResult: unknown = null) {
@@ -26,25 +26,6 @@ describe("SINGLETON_KEY", () => {
     expect(SINGLETON_KEY.length).toBeGreaterThan(0)
   })
 })
-
-describe("makeStreamKey", () => {
-  it("joins activity id and sorted stream keys with a colon", () => {
-    expect(makeStreamKey("123", ["heartrate", "altitude"])).toBe("123:altitude,heartrate")
-    expect(makeStreamKey("456", ["watts", "cadence", "time"])).toBe("456:cadence,time,watts")
-  })
-
-  it("sorts keys so order does not affect the key", () => {
-    const a = makeStreamKey("1", ["heartrate", "altitude"])
-    const b = makeStreamKey("1", ["altitude", "heartrate"])
-    expect(a).toBe(b)
-  })
-
-  it("handles a single key", () => {
-    expect(makeStreamKey("99", ["time"])).toBe("99:time")
-  })
-})
-
-// ── getCached ─────────────────────────────────────────────────────────────────
 
 describe("getCached", () => {
   it("returns null when no row exists", async () => {

@@ -71,44 +71,6 @@ export const STRAVA_TOOLS: ToolDef[] = [
     },
   },
   {
-    name: "strava_get_activity_streams",
-    description:
-      "Get time-series stream data for an activity. Returns metadata (series_type, resolution, " +
-      "original_size) for each requested stream — raw data arrays are stripped to keep responses " +
-      "concise. Available streams: time, distance, altitude, velocity_smooth, heartrate, cadence, " +
-      "watts, temp, moving, grade_smooth, latlng (GPS, excluded by default for privacy). " +
-      "Useful for understanding effort distribution, elevation profile, or power output over a ride.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        activity_id: {
-          type: "string",
-          description: "The Strava activity ID",
-        },
-        stream_keys: {
-          type: "string",
-          description:
-            "Comma-separated list of stream types to include. " +
-            "Defaults to: time,distance,altitude,velocity_smooth,heartrate,cadence,watts. " +
-            "Add latlng to include GPS coordinates (privacy-sensitive).",
-        },
-        ...SKIP_CACHE_PROP,
-      },
-      required: ["activity_id"],
-    },
-  },
-  {
-    name: "strava_get_athlete_profile",
-    description:
-      "Get the authenticated athlete's Strava profile. " +
-      "Includes name, location, follower/following counts, profile photo URL, " +
-      "measurement preference (feet vs meters), and FTP (functional threshold power).",
-    inputSchema: {
-      type: "object",
-      properties: { ...SKIP_CACHE_PROP },
-    },
-  },
-  {
     name: "strava_get_athlete_stats",
     description:
       "Get the athlete's all-time and year-to-date totals by sport (run, ride, swim). " +

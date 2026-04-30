@@ -71,7 +71,7 @@ POST /mcp  (with Bearer token)
   → OAuthProvider.fetch()         verify MCP token in OAUTH_KV
       → McpApiHandler.fetch()     single /mcp route
           → handleMcp()           parse JSON-RPC, route by method
-              → tools/list        return STRAVA_TOOLS (all 6) from tools.ts
+              → tools/list        return STRAVA_TOOLS (all 4) from tools.ts
               → tools/call        switch dispatch to per-tool handler
                   → getCached()   D1 lookup by (cache_type, cache_key)
                   → stravaFetch() on miss — calls getAccessToken() which auto-refreshes
@@ -87,15 +87,14 @@ POST /authorize → defaultHandler  validate MCP_AUTH_PASSWORD, completeAuthoriz
 Single-entry cache keyed by `(cache_type, cache_key)` — no per-day row merging like oura-mcp-server. TTLs:
 
 - `activity_list` — 5m (new workout may just have synced)
-- `activity`, `streams` — 24h (stable after creation)
-- `athlete`, `stats` — 1h (update after each activity)
+- `activity` — 24h (stable after creation)
+- `stats` — 1h (updates after each activity)
 - `zones` — 24h (only changes when user edits settings)
 
 Cache keys:
 - `activity_list`: `{startDate}_{endDate}_p{page}_{perPage}` (default strings when absent)
 - `activity`: activity ID
-- `streams`: `{activityId}:{sorted_comma_keys}` — sorted so key order doesn't matter
-- `athlete`, `stats`, `zones`: `SINGLETON_KEY` (`__singleton__`)
+- `stats`, `zones`: `SINGLETON_KEY` (`__singleton__`)
 
 Cache bypass: `skip_cache: true` tool argument (per-call) or `?no_cache` query param (per-request).
 
@@ -106,17 +105,13 @@ Cache bypass: `skip_cache: true` tool argument (per-call) or `?no_cache` query p
 - Retry/backoff: `Retry-After` header on 429, exponential (1s, 2s) on 5xx, max 2 retries
 - Rate limit capture: `X-RateLimit-Usage` + `X-RateLimit-Limit` parsed into every `StravaResponse`
 
-Noise stripping:
-- `stripActivityNoise` — removes `map` (polyline — large, not useful for text analysis)
-- `stripStreamNoise` — removes raw `data` arrays (tens of thousands of points); keeps metadata (series_type, original_size, resolution)
-
-Default stream keys exclude `latlng` (GPS traces) for privacy.
+`stripActivityNoise` removes the `map` polyline field (large, not useful for text analysis).
 
 `getAthleteStats` fetches `/athlete` first to get the ID, then `/athletes/{id}/stats`.
 
 ### Tools (`src/tools.ts`)
 
-6 tools: `strava_list_activities`, `strava_get_activity`, `strava_get_activity_streams`, `strava_get_athlete_profile`, `strava_get_athlete_stats`, `strava_get_athlete_zones`.
+4 tools: `strava_list_activities`, `strava_get_activity`, `strava_get_athlete_stats`, `strava_get_athlete_zones`.
 
 Adding a tool: add the fetch function in `strava.ts`, add the `ToolDef` to `STRAVA_TOOLS` in `tools.ts`, add a `case` in the switch in `handleMcp` in `index.ts`.
 

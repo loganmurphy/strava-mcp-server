@@ -1,17 +1,8 @@
 import OAuthProvider, { type OAuthHelpers } from "@cloudflare/workers-oauth-provider"
 import { WorkerEntrypoint } from "cloudflare:workers"
-import {
-  getAthleteProfile,
-  getAthleteStats,
-  getAthleteZones,
-  listActivities,
-  getActivityDetail,
-  getActivityStreams,
-  type StreamKey,
-  STREAM_KEYS,
-} from "./strava"
+import { getAthleteStats, getAthleteZones, listActivities, getActivityDetail } from "./strava"
 import type { StravaAuthEnv } from "./auth"
-import { getCached, setCached, makeStreamKey, SINGLETON_KEY } from "./cache"
+import { getCached, setCached, SINGLETON_KEY } from "./cache"
 import { STRAVA_TOOLS, type ToolDef } from "./tools"
 import { renderLoginPage, renderSuccessPage } from "./ui"
 
@@ -73,14 +64,6 @@ function toolResult(id: string | number | null, data: unknown): Response {
   )
 }
 
-function parseStreamKeys(raw: string | undefined): StreamKey[] {
-  if (!raw) return undefined as unknown as StreamKey[]
-  return raw
-    .split(",")
-    .map((k) => k.trim())
-    .filter((k): k is StreamKey => (STREAM_KEYS as readonly string[]).includes(k))
-}
-
 async function handleListActivities(
   id: string | number | null,
   args: Record<string, unknown>,
@@ -122,31 +105,6 @@ async function handleGetActivity(
   const resp = await getActivityDetail(env, activityId)
   const data = { data: resp.data, rateLimit: resp.rateLimit }
   if (!skipCache) ctx.waitUntil(setCached(env.DB, "activity", activityId, data))
-  return toolResult(id, { ...data, _cache: "miss" })
-}
-
-async function handleGetActivityStreams(
-  id: string | number | null,
-  args: Record<string, unknown>,
-  env: Env,
-  ctx: ExecutionContext,
-  skipCache: boolean,
-): Promise<Response> {
-  const activityId = args["activity_id"] as string
-  const requestedKeys = parseStreamKeys(args["stream_keys"] as string | undefined)
-  const cacheKey = makeStreamKey(
-    activityId,
-    requestedKeys ?? ["altitude", "cadence", "distance", "heartrate", "time", "velocity_smooth", "watts"],
-  )
-
-  if (!skipCache) {
-    const cached = await getCached(env.DB, "streams", cacheKey)
-    if (cached !== null) return toolResult(id, { ...cached, _cache: "hit" })
-  }
-
-  const resp = await getActivityStreams(env, activityId, requestedKeys || undefined)
-  const data = { data: resp.data, rateLimit: resp.rateLimit }
-  if (!skipCache) ctx.waitUntil(setCached(env.DB, "streams", cacheKey, data))
   return toolResult(id, { ...data, _cache: "miss" })
 }
 
@@ -216,12 +174,6 @@ export async function handleMcp(
             return await handleListActivities(id, toolArgs, env, ctx, skipCache)
           case "strava_get_activity":
             return await handleGetActivity(id, toolArgs, env, ctx, skipCache)
-          case "strava_get_activity_streams":
-            return await handleGetActivityStreams(id, toolArgs, env, ctx, skipCache)
-          case "strava_get_athlete_profile":
-            return await handleSingleton(id, "athlete", env, ctx, skipCache, () =>
-              getAthleteProfile(env),
-            )
           case "strava_get_athlete_stats":
             return await handleSingleton(id, "stats", env, ctx, skipCache, () =>
               getAthleteStats(env),

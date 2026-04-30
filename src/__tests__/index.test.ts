@@ -4,30 +4,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 vi.mock("../cache", () => ({
   getCached: vi.fn(),
   setCached: vi.fn(),
-  makeStreamKey: vi.fn((id: string, keys: string[]) => `${id}:${[...keys].sort().join(",")}`),
   SINGLETON_KEY: "__singleton__",
 }))
 
 vi.mock("../strava", () => ({
-  getAthleteProfile: vi.fn(),
   getAthleteStats: vi.fn(),
   getAthleteZones: vi.fn(),
   listActivities: vi.fn(),
   getActivityDetail: vi.fn(),
-  getActivityStreams: vi.fn(),
-  STREAM_KEYS: [
-    "time",
-    "distance",
-    "latlng",
-    "altitude",
-    "velocity_smooth",
-    "heartrate",
-    "cadence",
-    "watts",
-    "temp",
-    "moving",
-    "grade_smooth",
-  ],
 }))
 
 import * as cache from "../cache"
@@ -90,12 +74,10 @@ beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(cache.getCached).mockResolvedValue(null) // default: cache miss
   vi.mocked(cache.setCached).mockResolvedValue(undefined)
-  vi.mocked(strava.getAthleteProfile).mockResolvedValue(MOCK_RESP)
   vi.mocked(strava.getAthleteStats).mockResolvedValue(MOCK_RESP)
   vi.mocked(strava.getAthleteZones).mockResolvedValue(MOCK_RESP)
   vi.mocked(strava.listActivities).mockResolvedValue(MOCK_LIST_RESP)
   vi.mocked(strava.getActivityDetail).mockResolvedValue(MOCK_RESP)
-  vi.mocked(strava.getActivityStreams).mockResolvedValue({ data: {}, rateLimit: null })
 })
 
 // ── Routing ───────────────────────────────────────────────────────────────────
@@ -164,17 +146,15 @@ describe("initialize", () => {
 })
 
 describe("tools/list", () => {
-  it("returns all 6 STRAVA_TOOLS", async () => {
+  it("returns all 4 STRAVA_TOOLS", async () => {
     const res = await post("/mcp", jsonRpc("tools/list"))
     const body = (await res.json()) as { result: { tools: Array<{ name: string }> } }
     const names = body.result.tools.map((t) => t.name)
     expect(names).toContain("strava_list_activities")
     expect(names).toContain("strava_get_activity")
-    expect(names).toContain("strava_get_activity_streams")
-    expect(names).toContain("strava_get_athlete_profile")
     expect(names).toContain("strava_get_athlete_stats")
     expect(names).toContain("strava_get_athlete_zones")
-    expect(body.result.tools).toHaveLength(6)
+    expect(body.result.tools).toHaveLength(4)
   })
 })
 
@@ -230,10 +210,10 @@ describe("unknown tool", () => {
 describe("cache hit", () => {
   it("returns cached data without calling Strava", async () => {
     vi.mocked(cache.getCached).mockResolvedValueOnce({ data: { id: 99 }, rateLimit: null })
-    const res = await post("/mcp", jsonRpc("tools/call", { name: "strava_get_athlete_profile" }))
+    const res = await post("/mcp", jsonRpc("tools/call", { name: "strava_get_athlete_stats" }))
     const data = await parseResult(res)
     expect(data._cache).toBe("hit")
-    expect(strava.getAthleteProfile).not.toHaveBeenCalled()
+    expect(strava.getAthleteStats).not.toHaveBeenCalled()
   })
 })
 
@@ -243,13 +223,13 @@ describe("cache miss", () => {
     const ctx = makeCtx()
     const res = await post(
       "/mcp",
-      jsonRpc("tools/call", { name: "strava_get_athlete_profile" }),
+      jsonRpc("tools/call", { name: "strava_get_athlete_stats" }),
       makeEnv(),
       ctx,
     )
     const data = await parseResult(res)
     expect(data._cache).toBe("miss")
-    expect(strava.getAthleteProfile).toHaveBeenCalled()
+    expect(strava.getAthleteStats).toHaveBeenCalled()
     expect(ctx.waitUntil).toHaveBeenCalled()
   })
 })
@@ -259,7 +239,7 @@ describe("skip_cache: true", () => {
     const ctx = makeCtx()
     await post(
       "/mcp",
-      jsonRpc("tools/call", { name: "strava_get_athlete_profile", arguments: { skip_cache: true } }),
+      jsonRpc("tools/call", { name: "strava_get_athlete_stats", arguments: { skip_cache: true } }),
       makeEnv(),
       ctx,
     )
@@ -274,7 +254,7 @@ describe("forceSkipCache flag", () => {
       new Request("http://localhost/mcp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: jsonRpc("tools/call", { name: "strava_get_athlete_profile", arguments: {} }),
+        body: jsonRpc("tools/call", { name: "strava_get_athlete_stats", arguments: {} }),
       }),
       makeEnv(),
       makeCtx(),
@@ -320,49 +300,6 @@ describe("strava_get_activity", () => {
   })
 })
 
-describe("strava_get_activity_streams", () => {
-  it("calls getActivityStreams with parsed stream keys", async () => {
-    await post(
-      "/mcp",
-      jsonRpc("tools/call", {
-        name: "strava_get_activity_streams",
-        arguments: { activity_id: "7", stream_keys: "heartrate,altitude" },
-      }),
-    )
-    expect(strava.getActivityStreams).toHaveBeenCalledWith(
-      expect.anything(),
-      "7",
-      expect.arrayContaining(["heartrate", "altitude"]),
-    )
-  })
-
-  it("filters out unknown stream keys", async () => {
-    await post(
-      "/mcp",
-      jsonRpc("tools/call", {
-        name: "strava_get_activity_streams",
-        arguments: { activity_id: "7", stream_keys: "heartrate,invalid_key" },
-      }),
-    )
-    const [, , keys] = vi.mocked(strava.getActivityStreams).mock.calls[0]!
-    expect(keys).toContain("heartrate")
-    expect(keys).not.toContain("invalid_key")
-  })
-
-  it("uses default keys when stream_keys is not provided", async () => {
-    await post(
-      "/mcp",
-      jsonRpc("tools/call", {
-        name: "strava_get_activity_streams",
-        arguments: { activity_id: "7" },
-      }),
-    )
-    // Called with undefined so strava.ts applies its own defaults
-    const [, , keys] = vi.mocked(strava.getActivityStreams).mock.calls[0]!
-    expect(keys).toBeUndefined()
-  })
-})
-
 describe("strava_get_athlete_stats", () => {
   it("calls getAthleteStats", async () => {
     await post("/mcp", jsonRpc("tools/call", { name: "strava_get_athlete_stats" }))
@@ -381,10 +318,10 @@ describe("strava_get_athlete_zones", () => {
 
 describe("Strava API error", () => {
   it("surfaces the error message in the tool response", async () => {
-    vi.mocked(strava.getAthleteProfile).mockRejectedValueOnce(
+    vi.mocked(strava.getAthleteStats).mockRejectedValueOnce(
       new Error("Strava API error 500: internal error"),
     )
-    const res = await post("/mcp", jsonRpc("tools/call", { name: "strava_get_athlete_profile" }))
+    const res = await post("/mcp", jsonRpc("tools/call", { name: "strava_get_athlete_stats" }))
     const body = (await res.json()) as {
       result: { isError: boolean; content: Array<{ text: string }> }
     }
@@ -393,8 +330,8 @@ describe("Strava API error", () => {
   })
 
   it("handles non-Error thrown values", async () => {
-    vi.mocked(strava.getAthleteProfile).mockRejectedValueOnce("string error")
-    const res = await post("/mcp", jsonRpc("tools/call", { name: "strava_get_athlete_profile" }))
+    vi.mocked(strava.getAthleteStats).mockRejectedValueOnce("string error")
+    const res = await post("/mcp", jsonRpc("tools/call", { name: "strava_get_athlete_stats" }))
     const body = (await res.json()) as { result: { isError: boolean } }
     expect(body.result.isError).toBe(true)
   })

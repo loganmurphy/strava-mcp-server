@@ -84,12 +84,6 @@ function defaultBefore(): number {
   return Math.floor((Date.now() + 86_400_000) / 1000) // tomorrow, to include today
 }
 
-// Keeps metadata (series_type, original_size, resolution) — drops the raw data array.
-export function stripStreamNoise(stream: StravaItem): StravaItem {
-  const { data: _data, ...rest } = stream
-  return rest
-}
-
 export function stripActivityNoise(activity: StravaItem): StravaItem {
   const result = { ...activity }
   // map is a large polyline object useful for rendering but not for text analysis
@@ -143,44 +137,3 @@ export async function getActivityDetail(
   return { data: stripActivityNoise(resp.data as StravaItem), rateLimit: resp.rateLimit }
 }
 
-export const STREAM_KEYS = [
-  "time",
-  "distance",
-  "latlng",
-  "altitude",
-  "velocity_smooth",
-  "heartrate",
-  "cadence",
-  "watts",
-  "temp",
-  "moving",
-  "grade_smooth",
-] as const
-
-export type StreamKey = (typeof STREAM_KEYS)[number]
-
-// latlng excluded by default — contains GPS traces.
-const DEFAULT_STREAM_KEYS: StreamKey[] = [
-  "time",
-  "distance",
-  "altitude",
-  "velocity_smooth",
-  "heartrate",
-  "cadence",
-  "watts",
-]
-
-export async function getActivityStreams(
-  env: StravaAuthEnv,
-  activityId: string,
-  includeKeys: StreamKey[] = DEFAULT_STREAM_KEYS,
-): Promise<StravaResponse<StravaItem>> {
-  const keys = includeKeys.join(",")
-  const params = new URLSearchParams({ keys, key_by_type: "true" })
-  const resp = await stravaFetch(env, `/activities/${activityId}/streams`, params)
-  const streams = resp.data as Record<string, StravaItem>
-  const stripped = Object.fromEntries(
-    Object.entries(streams).map(([k, v]) => [k, stripStreamNoise(v)]),
-  )
-  return { data: stripped, rateLimit: resp.rateLimit }
-}
