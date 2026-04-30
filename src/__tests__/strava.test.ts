@@ -183,8 +183,6 @@ describe("retry behavior", () => {
   })
 })
 
-// ── Athlete endpoints ─────────────────────────────────────────────────────────
-
 describe("getAthleteProfile", () => {
   it("fetches /athlete and returns data", async () => {
     const spy = mockFetch(200, { id: 123, firstname: "Jane" })
