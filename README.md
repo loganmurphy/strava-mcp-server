@@ -7,6 +7,8 @@ A lightweight [Model Context Protocol](https://modelcontextprotocol.io) server t
 
 Tested with **Claude.ai (web), Claude Desktop, and Claude mobile** via `claude.ai/settings/connectors`. Any MCP client that supports OAuth 2.1 remote servers should work — though only Claude is officially tested and the bootstrap wizard targets Claude exclusively.
 
+Also available: [oura-mcp-server](https://github.com/loganmurphy/oura-mcp-server) — Oura Ring sleep, readiness, and activity data as MCP tools.
+
 ## Architecture
 
 ```
