@@ -114,9 +114,9 @@ Cache bypass: `skip_cache: true` tool argument (per-call) or `?no_cache` query p
 
 ### Tools (`src/tools.ts`)
 
-6 tools: `strava_list_activities`, `strava_get_activity`, `strava_get_athlete_stats`, `strava_get_athlete_zones`, `strava_get_activity_zones`, `strava_get_gear`.
+6 tools: `strava_list_activities`, `strava_get_activity`, `strava_get_athlete_stats`, `strava_get_athlete_zones`, `strava_get_activity_zones` (requires Strava Summit subscription — returns 402 for free accounts), `strava_get_gear`.
 
-Adding a tool: add the fetch function in `strava.ts`, add the `ToolDef` to `STRAVA_TOOLS` in `tools.ts`, add a `case` in the switch in `handleMcp` in `index.ts`.
+Adding a tool: add the fetch function in `strava.ts`, add the `ToolDef` to `STRAVA_TOOLS` in `tools.ts`, add a `case` in `handleMcp` in `index.ts`. Use `handleKeyedFetch` for tools keyed by an ID (activity, gear) or `handleSingleton` for tools with no key (stats, zones) — do not inline the cache logic.
 
 ### Testing
 
