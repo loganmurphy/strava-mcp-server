@@ -54,7 +54,6 @@ async function stravaFetch(
       )
     }
 
-    // Retry on 429 (rate limited) and transient 5xx errors.
     if ((res.status === 429 || res.status >= 500) && attempt < MAX_RETRIES) {
       const delayMs =
         res.status === 429

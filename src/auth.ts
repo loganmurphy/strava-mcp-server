@@ -1,12 +1,5 @@
-// Strava token management.
-//
-// Strava issues short-lived access tokens (6h) backed by long-lived refresh tokens.
-// Access tokens are cached in OAUTH_KV under `strava:access_token`.
-// Refresh tokens are stored in OAUTH_KV under `strava:refresh_token` so the Worker
-// can write back a rotated value without requiring a redeployment (Worker secrets
-// are not writable at runtime).
-//
-// Bootstrap writes the initial tokens; this module handles all subsequent refreshes.
+// Tokens live in OAUTH_KV rather than Worker secrets so the Worker can rotate them
+// at runtime — secrets are read-only after deployment.
 
 const ACCESS_TOKEN_KEY = "strava:access_token"
 const REFRESH_TOKEN_KEY = "strava:refresh_token"
@@ -80,8 +73,7 @@ export async function refreshAccessToken(env: StravaAuthEnv, refreshToken: strin
 
   const data = (await res.json()) as RefreshResponse
 
-  // Write back both tokens. Access token TTL is set to expiry + buffer so KV
-  // auto-expires it — reads after that return null and trigger another refresh.
+  // TTL set to expiry + buffer so KV auto-expires the entry and triggers a refresh.
   const ttlSecs = data.expires_at - Math.floor(Date.now() / 1000) + EXPIRY_BUFFER_SECS
   await Promise.all([
     env.OAUTH_KV.put(
