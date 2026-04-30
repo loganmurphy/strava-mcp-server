@@ -138,3 +138,17 @@ export async function getActivityDetail(
   return { data: stripActivityNoise(resp.data as StravaItem), rateLimit: resp.rateLimit }
 }
 
+export async function getActivityZones(
+  env: StravaAuthEnv,
+  activityId: string,
+): Promise<StravaResponse<StravaItem[]>> {
+  return stravaFetch(env, `/activities/${activityId}/zones`) as Promise<StravaResponse<StravaItem[]>>
+}
+
+export async function getGear(
+  env: StravaAuthEnv,
+  gearId: string,
+): Promise<StravaResponse<StravaItem>> {
+  return stravaFetch(env, `/gear/${gearId}`) as Promise<StravaResponse<StravaItem>>
+}
+

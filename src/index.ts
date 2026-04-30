@@ -1,6 +1,6 @@
 import OAuthProvider, { type OAuthHelpers } from "@cloudflare/workers-oauth-provider"
 import { WorkerEntrypoint } from "cloudflare:workers"
-import { getAthleteStats, getAthleteZones, listActivities, getActivityDetail } from "./strava"
+import { getAthleteStats, getAthleteZones, listActivities, getActivityDetail, getActivityZones, getGear } from "./strava"
 import type { StravaAuthEnv } from "./auth"
 import { getCached, setCached, SINGLETON_KEY } from "./cache"
 import { STRAVA_TOOLS, type ToolDef } from "./tools"
@@ -182,6 +182,28 @@ export async function handleMcp(
             return await handleSingleton(id, "zones", env, ctx, skipCache, () =>
               getAthleteZones(env),
             )
+          case "strava_get_activity_zones": {
+            const activityId = toolArgs["activity_id"] as string
+            if (!skipCache) {
+              const cached = await getCached(env.DB, "activity_zones", activityId)
+              if (cached !== null) return toolResult(id, { ...cached, _cache: "hit" })
+            }
+            const resp = await getActivityZones(env, activityId)
+            const data = { data: resp.data, rateLimit: resp.rateLimit }
+            if (!skipCache) ctx.waitUntil(setCached(env.DB, "activity_zones", activityId, data))
+            return toolResult(id, { ...data, _cache: "miss" })
+          }
+          case "strava_get_gear": {
+            const gearId = toolArgs["gear_id"] as string
+            if (!skipCache) {
+              const cached = await getCached(env.DB, "gear", gearId)
+              if (cached !== null) return toolResult(id, { ...cached, _cache: "hit" })
+            }
+            const resp = await getGear(env, gearId)
+            const data = { data: resp.data, rateLimit: resp.rateLimit }
+            if (!skipCache) ctx.waitUntil(setCached(env.DB, "gear", gearId, data))
+            return toolResult(id, { ...data, _cache: "miss" })
+          }
           default:
             throw new Error(`Unknown tool: ${toolName}`)
         }

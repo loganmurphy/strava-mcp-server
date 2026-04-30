@@ -92,4 +92,42 @@ export const STRAVA_TOOLS: ToolDef[] = [
       properties: { ...SKIP_CACHE_PROP },
     },
   },
+  {
+    name: "strava_get_activity_zones",
+    description:
+      "Get heart rate and power zone distribution for a specific activity. " +
+      "Returns time spent in each zone (in seconds) — e.g. how many minutes were in Z2 vs Z3. " +
+      "Complements strava_get_activity (which has splits/laps) with zone-based effort analysis. " +
+      "Use strava_list_activities to find activity IDs.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        activity_id: {
+          type: "string",
+          description: "The Strava activity ID (numeric string)",
+        },
+        ...SKIP_CACHE_PROP,
+      },
+      required: ["activity_id"],
+    },
+  },
+  {
+    name: "strava_get_gear",
+    description:
+      "Get details for a specific piece of gear (shoe or bike) by its Strava gear ID. " +
+      "Returns brand, model, nickname, and total distance logged in meters. " +
+      "Gear IDs appear in activity detail responses as the gear_id field (e.g. 'g12345678'). " +
+      "Useful for tracking shoe mileage and knowing when to replace gear.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        gear_id: {
+          type: "string",
+          description: "The Strava gear ID (e.g. 'g12345678')",
+        },
+        ...SKIP_CACHE_PROP,
+      },
+      required: ["gear_id"],
+    },
+  },
 ]

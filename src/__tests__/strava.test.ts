@@ -6,6 +6,8 @@ import {
   getAthleteZones,
   listActivities,
   getActivityDetail,
+  getActivityZones,
+  getGear,
 } from "../strava"
 import type { StravaAuthEnv } from "../auth"
 
@@ -268,6 +270,26 @@ describe("getActivityDetail", () => {
     expect(spy.mock.calls[0]![0]).toContain("/activities/789")
     expect(result.data).not.toHaveProperty("map")
     expect(result.data).toMatchObject({ id: 789, name: "Trail Run" })
+  })
+})
+
+describe("getActivityZones", () => {
+  it("fetches /activities/:id/zones", async () => {
+    const zones = [{ type: "heartrate", distribution_buckets: [{ min: 0, max: 130, time: 120 }] }]
+    const spy = mockFetch(200, zones)
+    const result = await getActivityZones(makeEnv(), "789")
+    expect(spy.mock.calls[0]![0]).toContain("/activities/789/zones")
+    expect(result.data).toEqual(zones)
+  })
+})
+
+describe("getGear", () => {
+  it("fetches /gear/:id", async () => {
+    const gear = { id: "g12345", name: "Speedgoat 5", distance: 75600 }
+    const spy = mockFetch(200, gear)
+    const result = await getGear(makeEnv(), "g12345")
+    expect(spy.mock.calls[0]![0]).toContain("/gear/g12345")
+    expect(result.data).toMatchObject({ id: "g12345", distance: 75600 })
   })
 })
 

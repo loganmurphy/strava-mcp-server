@@ -71,7 +71,7 @@ POST /mcp  (with Bearer token)
   → OAuthProvider.fetch()         verify MCP token in OAUTH_KV
       → McpApiHandler.fetch()     single /mcp route
           → handleMcp()           parse JSON-RPC, route by method
-              → tools/list        return STRAVA_TOOLS (all 4) from tools.ts
+              → tools/list        return STRAVA_TOOLS (all 6) from tools.ts
               → tools/call        switch dispatch to per-tool handler
                   → getCached()   D1 lookup by (cache_type, cache_key)
                   → stravaFetch() on miss — calls getAccessToken() which auto-refreshes
@@ -111,7 +111,7 @@ Cache bypass: `skip_cache: true` tool argument (per-call) or `?no_cache` query p
 
 ### Tools (`src/tools.ts`)
 
-4 tools: `strava_list_activities`, `strava_get_activity`, `strava_get_athlete_stats`, `strava_get_athlete_zones`.
+6 tools: `strava_list_activities`, `strava_get_activity`, `strava_get_athlete_stats`, `strava_get_athlete_zones`, `strava_get_activity_zones`, `strava_get_gear`.
 
 Adding a tool: add the fetch function in `strava.ts`, add the `ToolDef` to `STRAVA_TOOLS` in `tools.ts`, add a `case` in the switch in `handleMcp` in `index.ts`.
 

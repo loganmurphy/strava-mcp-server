@@ -5,6 +5,8 @@ const TTL_MS: Record<string, number> = {
   activity: 24 * 60 * 60 * 1000, // 24h — stable once synced
   stats: 60 * 60 * 1000, //  1h — updates after each activity
   zones: 24 * 60 * 60 * 1000, // 24h — only changes when user updates settings
+  activity_zones: 24 * 60 * 60 * 1000, // 24h — stable once activity synced
+  gear: 60 * 60 * 1000, //  1h — distance updates after each tagged activity
 }
 
 function ttlFor(cacheType: string): number {

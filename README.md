@@ -193,12 +193,14 @@ npx wrangler kv key put strava:refresh_token 'your_refresh_token' --namespace-id
 
 All date params optional, default to last 7 days (YYYY-MM-DD). `end_date` is always **inclusive**.
 
-| Tool                       | Returns                                           |
-| -------------------------- | ------------------------------------------------- |
-| `strava_list_activities`   | Activity list with distance, time, HR, pace/power |
-| `strava_get_activity`      | Full activity detail with splits and best efforts |
-| `strava_get_athlete_stats` | YTD and all-time totals by sport                  |
-| `strava_get_athlete_zones` | HR and power zones                                |
+| Tool                        | Returns                                                  |
+| --------------------------- | -------------------------------------------------------- |
+| `strava_list_activities`    | Activity list with distance, time, HR, pace/power        |
+| `strava_get_activity`       | Full activity detail with laps, splits, and best efforts |
+| `strava_get_athlete_stats`  | YTD and all-time totals by sport                         |
+| `strava_get_athlete_zones`  | Athlete-level HR and power zones                         |
+| `strava_get_activity_zones` | Time-in-zone breakdown for a specific activity           |
+| `strava_get_gear`           | Gear details and total mileage by gear ID                |
 
 All tools accept `skip_cache` (bool) to force a fresh fetch.
 

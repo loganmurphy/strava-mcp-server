@@ -12,6 +12,8 @@ vi.mock("../strava", () => ({
   getAthleteZones: vi.fn(),
   listActivities: vi.fn(),
   getActivityDetail: vi.fn(),
+  getActivityZones: vi.fn(),
+  getGear: vi.fn(),
 }))
 
 import * as cache from "../cache"
@@ -78,6 +80,8 @@ beforeEach(() => {
   vi.mocked(strava.getAthleteZones).mockResolvedValue(MOCK_RESP)
   vi.mocked(strava.listActivities).mockResolvedValue(MOCK_LIST_RESP)
   vi.mocked(strava.getActivityDetail).mockResolvedValue(MOCK_RESP)
+  vi.mocked(strava.getActivityZones).mockResolvedValue({ data: [], rateLimit: null })
+  vi.mocked(strava.getGear).mockResolvedValue(MOCK_RESP)
 })
 
 // ── Routing ───────────────────────────────────────────────────────────────────
@@ -154,7 +158,9 @@ describe("tools/list", () => {
     expect(names).toContain("strava_get_activity")
     expect(names).toContain("strava_get_athlete_stats")
     expect(names).toContain("strava_get_athlete_zones")
-    expect(body.result.tools).toHaveLength(4)
+    expect(names).toContain("strava_get_activity_zones")
+    expect(names).toContain("strava_get_gear")
+    expect(body.result.tools).toHaveLength(6)
   })
 })
 
@@ -311,6 +317,28 @@ describe("strava_get_athlete_zones", () => {
   it("calls getAthleteZones", async () => {
     await post("/mcp", jsonRpc("tools/call", { name: "strava_get_athlete_zones" }))
     expect(strava.getAthleteZones).toHaveBeenCalled()
+  })
+})
+
+describe("strava_get_activity_zones", () => {
+  it("calls getActivityZones with the activity_id", async () => {
+    const res = await post(
+      "/mcp",
+      jsonRpc("tools/call", { name: "strava_get_activity_zones", arguments: { activity_id: "42" } }),
+    )
+    expect(strava.getActivityZones).toHaveBeenCalledWith(expect.anything(), "42")
+    expect(res.status).toBe(200)
+  })
+})
+
+describe("strava_get_gear", () => {
+  it("calls getGear with the gear_id", async () => {
+    const res = await post(
+      "/mcp",
+      jsonRpc("tools/call", { name: "strava_get_gear", arguments: { gear_id: "g12345" } }),
+    )
+    expect(strava.getGear).toHaveBeenCalledWith(expect.anything(), "g12345")
+    expect(res.status).toBe(200)
   })
 })
 
