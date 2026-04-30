@@ -29,7 +29,8 @@ export async function runStravaOAuth(
     `?client_id=${encodeURIComponent(clientId)}` +
     `&response_type=code` +
     `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
-    `&scope=${encodeURIComponent(SCOPE)}`
+    `&scope=${encodeURIComponent(SCOPE)}` +
+    `&approval_prompt=force`
 
   info("Opening Strava authorization in your browser...")
   console.log(`  ${c.dim("If the browser doesn't open, visit:")}`)
