@@ -14,7 +14,7 @@ Claude (web / desktop / mobile)
      │  OAuth 2.1 (PKCE) — password login
 Cloudflare Worker  (@cloudflare/workers-oauth-provider)
      ├─ KV       MCP OAuth tokens + Strava access/refresh tokens
-     ├─ D1       cache (5m activity lists / 24h activities & streams / 1h stats)
+     ├─ D1       cache (5m activity lists / 24h activities / 1h stats & zones)
      └─ Strava API  fetched only on cache miss; auto-refreshes expired tokens
 ```
 
@@ -24,6 +24,7 @@ Strava access tokens expire every 6 hours. The Worker refreshes them automatical
 
 - [Cloudflare account](https://dash.cloudflare.com/sign-up) (free tier)
 - [Strava API application](https://www.strava.com/settings/api) — set Authorization Callback Domain to `localhost`
+  > `localhost` is correct for both local dev **and** production. The Strava OAuth flow always runs on your machine (port 9999) during setup — the deployed Worker is never a Strava redirect target. One app, one domain, works everywhere.
 - Node.js 24, pnpm 10 — [Volta](https://volta.sh) recommended (versions pinned in `package.json`)
 
 ## Bootstrap
@@ -192,18 +193,14 @@ npx wrangler kv key put strava:refresh_token 'your_refresh_token' --namespace-id
 
 All date params optional, default to last 7 days (YYYY-MM-DD). `end_date` is always **inclusive**.
 
-| Tool                          | Returns                                           |
-| ----------------------------- | ------------------------------------------------- |
-| `strava_list_activities`      | Activity list with distance, time, HR, pace/power |
-| `strava_get_activity`         | Full activity detail with splits and best efforts |
-| `strava_get_activity_streams` | Stream metadata (series_type, resolution, size)   |
-| `strava_get_athlete_profile`  | Profile, location, FTP                            |
-| `strava_get_athlete_stats`    | YTD and all-time totals by sport                  |
-| `strava_get_athlete_zones`    | HR and power zones                                |
+| Tool                       | Returns                                           |
+| -------------------------- | ------------------------------------------------- |
+| `strava_list_activities`   | Activity list with distance, time, HR, pace/power |
+| `strava_get_activity`      | Full activity detail with splits and best efforts |
+| `strava_get_athlete_stats` | YTD and all-time totals by sport                  |
+| `strava_get_athlete_zones` | HR and power zones                                |
 
 All tools accept `skip_cache` (bool) to force a fresh fetch.
-
-`strava_get_activity_streams` accepts `stream_keys` (comma-separated). Available: `time`, `distance`, `altitude`, `velocity_smooth`, `heartrate`, `cadence`, `watts`, `temp`, `moving`, `grade_smooth`, `latlng` (excluded by default — contains GPS traces).
 
 ---
 
