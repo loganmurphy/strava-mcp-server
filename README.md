@@ -2,6 +2,7 @@
 
 [![CI](https://img.shields.io/github/actions/workflow/status/loganmurphy/strava-mcp-server/ci.yml?label=CI)](https://github.com/loganmurphy/strava-mcp-server/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-5F7FFF?logo=buy-me-a-coffee&logoColor=white)](https://www.buymeacoffee.com/loganmurphc)
 
 A lightweight [Model Context Protocol](https://modelcontextprotocol.io) server that exposes your [Strava](https://strava.com) data as tools for Claude. Runs on Cloudflare Workers with a D1 cache layer for fast repeated queries.
 
@@ -237,3 +238,9 @@ scripts/
 migrations/
   001_init.sql      D1 schema
 ```
+
+---
+
+If this saved you some time, a coffee is always appreciated!
+
+[![Buy Me a Coffee](https://cdn.buymeacoffee.com/buttons/v2/default-blue.png)](https://www.buymeacoffee.com/loganmurphc)
