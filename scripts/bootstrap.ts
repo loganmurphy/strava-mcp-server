@@ -532,6 +532,8 @@ async function main(): Promise<void> {
   const workerUrl = await deployWorker(accountId)
 
   const refreshToken = await authorizeStrava(accountId, kvId, clientId, clientSecret)
+  saveDevVars(DEV_VARS_PATH, { STRAVA_REFRESH_TOKEN: refreshToken })
+  ok("STRAVA_REFRESH_TOKEN saved to .dev.vars")
   setWorkerSecrets(accountId, clientId, clientSecret, refreshToken, mcpPassword)
 
   const alreadyConnected = loadDevVars(BOOTSTRAP_STATE_PATH)["CLAUDE_CONNECTED"] === "true"
