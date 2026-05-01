@@ -382,25 +382,24 @@ async function authorizeStrava(
   const tokens = await runStravaOAuth(clientId, clientSecret)
   ok("Strava tokens obtained")
 
-  // Store tokens in the remote KV namespace.
   const accessTokenPayload = JSON.stringify({ token: tokens.accessToken, expires_at: tokens.expiresAt })
-  const cfEnv = { ...process.env, CLOUDFLARE_ACCOUNT_ID: accountId }
+  const cfEnv = { ...process.env, CLOUDFLARE_ACCOUNT_ID: accountId, WRANGLER_SEND_METRICS: "false" }
 
   const putAccess = spawnSync(
     "npx",
     ["wrangler", "kv", "key", "put", "strava:access_token", accessTokenPayload, "--namespace-id", kvId],
-    { stdio: ["ignore", "pipe", "pipe"], encoding: "utf8", env: cfEnv },
+    { stdio: ["ignore", "inherit", "inherit"], env: cfEnv },
   )
-  if (putAccess.status !== 0) throw new Error(`Failed to store access token: ${putAccess.stderr?.trim()}`)
-  ok("strava:access_token stored in KV")
+  if (putAccess.status !== 0) throw new Error("Failed to write strava:access_token to production KV")
+  ok("strava:access_token written to production KV")
 
   const putRefresh = spawnSync(
     "npx",
     ["wrangler", "kv", "key", "put", "strava:refresh_token", tokens.refreshToken, "--namespace-id", kvId],
-    { stdio: ["ignore", "pipe", "pipe"], encoding: "utf8", env: cfEnv },
+    { stdio: ["ignore", "inherit", "inherit"], env: cfEnv },
   )
-  if (putRefresh.status !== 0) throw new Error(`Failed to store refresh token: ${putRefresh.stderr?.trim()}`)
-  ok("strava:refresh_token stored in KV")
+  if (putRefresh.status !== 0) throw new Error("Failed to write strava:refresh_token to production KV")
+  ok("strava:refresh_token written to production KV")
 }
 
 function setWorkerSecrets(

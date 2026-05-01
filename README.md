@@ -204,19 +204,19 @@ All tools accept `skip_cache` (bool) to force a fresh fetch.
 
 **Tools not appearing** — remove and re-add the connector at `claude.ai/settings/connectors`.
 
-**Strava 401 / token rejected** — re-authorize: run `pnpm connect-local` (local dev) or `pnpm bootstrap` (production).
+**Today's activities missing** — Strava may not have synced yet. Use `skip_cache: true` to check.
 
 **strava_get_activity_zones returns an error** — this endpoint requires a Strava Summit subscription. Free accounts get a 402 and a clear error message.
 
-**Today's activities missing** — Strava may not have synced yet. Use `skip_cache: true` to check.
+**Strava 401 / token rejected** — re-authorize: run `pnpm connect-local` (local dev) or `pnpm bootstrap` (production). Both scripts always re-run the Strava OAuth flow and write fresh tokens — no redeploy needed.
 
 **Rotate MCP password** — `npx wrangler secret put MCP_AUTH_PASSWORD`, then `pnpm revoke` (invalidates Claude sessions so it re-auths with the new password; Strava tokens are preserved).
 
-**Port 8787 in use (local dev)** — `lsof -ti :8787 | xargs kill -9 && pnpm dev`
+**`pnpm bootstrap` fails at Cloudflare login** — run `npx wrangler login` manually first.
 
 **Port 9999 in use (bootstrap OAuth)** — close whatever is using it and re-run.
 
-**`pnpm bootstrap` fails at Cloudflare login** — run `npx wrangler login` manually first.
+**Port 8787 in use (local dev)** — `lsof -ti :8787 | xargs kill -9 && pnpm dev`
 
 ---
 
