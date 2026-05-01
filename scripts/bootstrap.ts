@@ -504,7 +504,7 @@ async function main(): Promise<void> {
     `  • Apply D1 schema (idempotent)`,
     `  • Deploy Worker "${WORKER_NAME}" (create on first run, update otherwise)`,
     `  • Authorize with Strava (browser OAuth flow)`,
-    `  • Set STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET, MCP_AUTH_PASSWORD secrets`,
+    `  • Set STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET, STRAVA_REFRESH_TOKEN, MCP_AUTH_PASSWORD secrets`,
   ])
   if (!(await confirm("Proceed?", true))) {
     console.log("  Cancelled — no changes were made.")
