@@ -62,7 +62,7 @@ This server has two distinct OAuth flows:
 
 1. **MCP auth** (`@cloudflare/workers-oauth-provider`) — gates Claude's access to the `/mcp` endpoint via password login. Tokens stored in `OAUTH_KV` by the library.
 
-2. **Strava auth** (`src/auth.ts`) — the Worker's identity with Strava API. Access tokens expire every 6h and are refreshed automatically via a stored refresh token. Both tokens live in `OAUTH_KV` under `strava:access_token` and `strava:refresh_token`. They're stored in KV (not Worker secrets) so the Worker can rotate them at runtime without redeployment.
+2. **Strava auth** (`src/auth.ts`) — the Worker's identity with Strava API. Access tokens expire every 6h and are refreshed automatically via a stored refresh token. Both tokens live in `OAUTH_KV` under `strava:access_token` and `strava:refresh_token`. They're stored in KV so the Worker can rotate them at runtime. `STRAVA_REFRESH_TOKEN` is also set as a Worker secret by `pnpm bootstrap` as a fallback — `getAccessToken()` falls back to it if KV is empty, then writes the rotated tokens back to KV.
 
 ### Request flow
 

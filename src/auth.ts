@@ -23,9 +23,9 @@ export interface StravaAuthEnv {
   OAUTH_KV: KVNamespace
   STRAVA_CLIENT_ID: string
   STRAVA_CLIENT_SECRET: string
-  // Local dev only — set in .dev.vars by `pnpm connect-local` as a fallback
-  // when the local KV store hasn't been seeded. After the first successful
-  // refresh the rotated token is written to KV and this var is no longer used.
+  // Fallback when KV has no refresh token — set in .dev.vars by `pnpm connect-local`
+  // (local) and as a Worker secret by `pnpm bootstrap` (production). After the first
+  // successful refresh the rotated token is written to KV and this var is no longer used.
   STRAVA_REFRESH_TOKEN: string
 }
 

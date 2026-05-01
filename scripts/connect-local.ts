@@ -110,9 +110,25 @@ async function main() {
   const tokens = await runStravaOAuth(clientId, clientSecret)
   ok("Strava tokens obtained")
 
-  // Write the refresh token to .dev.vars so auth.ts can bootstrap local KV.
-  // On first request, the Worker refreshes using this token and writes both
-  // tokens to local KV — subsequent requests use KV directly.
+  // Write tokens directly to local KV so stale tokens from previous runs don't take precedence.
+  const kvEnv = { ...process.env, WRANGLER_SEND_METRICS: "false" }
+  const accessPayload = JSON.stringify({ token: tokens.accessToken, expires_at: tokens.expiresAt })
+  const putAccess = spawnSync(
+    "npx",
+    ["wrangler", "kv", "key", "put", "strava:access_token", accessPayload, "--binding", "OAUTH_KV", "--local"],
+    { stdio: ["ignore", "inherit", "inherit"], env: kvEnv },
+  )
+  if (putAccess.status !== 0) warn("Could not write to local KV — will fall back to .dev.vars on first request")
+  else ok("strava:access_token written to local KV")
+
+  const putRefresh = spawnSync(
+    "npx",
+    ["wrangler", "kv", "key", "put", "strava:refresh_token", tokens.refreshToken, "--binding", "OAUTH_KV", "--local"],
+    { stdio: ["ignore", "inherit", "inherit"], env: kvEnv },
+  )
+  if (putRefresh.status === 0) ok("strava:refresh_token written to local KV")
+
+  // Keep .dev.vars updated as a fallback in case local KV is cleared.
   saveDevVars(DEV_VARS_PATH, { STRAVA_REFRESH_TOKEN: tokens.refreshToken })
   ok("STRAVA_REFRESH_TOKEN saved to .dev.vars")
 

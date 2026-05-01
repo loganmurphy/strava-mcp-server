@@ -376,37 +376,39 @@ async function authorizeStrava(
   kvId: string,
   clientId: string,
   clientSecret: string,
-): Promise<void> {
+): Promise<string> {
   step(11, "Authorize Strava")
 
   const tokens = await runStravaOAuth(clientId, clientSecret)
   ok("Strava tokens obtained")
 
-  // Store tokens in the remote KV namespace.
   const accessTokenPayload = JSON.stringify({ token: tokens.accessToken, expires_at: tokens.expiresAt })
-  const cfEnv = { ...process.env, CLOUDFLARE_ACCOUNT_ID: accountId }
+  const cfEnv = { ...process.env, CLOUDFLARE_ACCOUNT_ID: accountId, WRANGLER_SEND_METRICS: "false" }
 
   const putAccess = spawnSync(
     "npx",
     ["wrangler", "kv", "key", "put", "strava:access_token", accessTokenPayload, "--namespace-id", kvId],
-    { stdio: ["ignore", "pipe", "pipe"], encoding: "utf8", env: cfEnv },
+    { stdio: ["ignore", "inherit", "inherit"], env: cfEnv },
   )
-  if (putAccess.status !== 0) throw new Error(`Failed to store access token: ${putAccess.stderr?.trim()}`)
-  ok("strava:access_token stored in KV")
+  if (putAccess.status !== 0) throw new Error("Failed to write strava:access_token to production KV")
+  ok("strava:access_token written to production KV")
 
   const putRefresh = spawnSync(
     "npx",
     ["wrangler", "kv", "key", "put", "strava:refresh_token", tokens.refreshToken, "--namespace-id", kvId],
-    { stdio: ["ignore", "pipe", "pipe"], encoding: "utf8", env: cfEnv },
+    { stdio: ["ignore", "inherit", "inherit"], env: cfEnv },
   )
-  if (putRefresh.status !== 0) throw new Error(`Failed to store refresh token: ${putRefresh.stderr?.trim()}`)
-  ok("strava:refresh_token stored in KV")
+  if (putRefresh.status !== 0) throw new Error("Failed to write strava:refresh_token to production KV")
+  ok("strava:refresh_token written to production KV")
+
+  return tokens.refreshToken
 }
 
 function setWorkerSecrets(
   accountId: string,
   clientId: string,
   clientSecret: string,
+  refreshToken: string,
   mcpPassword: string,
 ): void {
   step(12, "Set Worker secrets")
@@ -414,6 +416,8 @@ function setWorkerSecrets(
   for (const [name, value] of [
     ["STRAVA_CLIENT_ID", clientId],
     ["STRAVA_CLIENT_SECRET", clientSecret],
+    // Fallback if KV tokens are ever missing — auth.ts uses this before failing
+    ["STRAVA_REFRESH_TOKEN", refreshToken],
     [AUTH_SECRET_NAME, mcpPassword],
   ] as const) {
     const result = spawnSync("npx", ["wrangler", "secret", "put", name], {
@@ -527,8 +531,8 @@ async function main(): Promise<void> {
   const mcpPassword = await promptMcpPassword()
   const workerUrl = await deployWorker(accountId)
 
-  await authorizeStrava(accountId, kvId, clientId, clientSecret)
-  setWorkerSecrets(accountId, clientId, clientSecret, mcpPassword)
+  const refreshToken = await authorizeStrava(accountId, kvId, clientId, clientSecret)
+  setWorkerSecrets(accountId, clientId, clientSecret, refreshToken, mcpPassword)
 
   const alreadyConnected = loadDevVars(BOOTSTRAP_STATE_PATH)["CLAUDE_CONNECTED"] === "true"
   const ready = await waitForWorker(workerUrl, !alreadyConnected)
