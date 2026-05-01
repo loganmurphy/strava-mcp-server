@@ -175,6 +175,7 @@ npx wrangler kv namespace create strava-oauth
 npx wrangler d1 execute strava-cache --remote --file=./migrations/001_init.sql
 npx wrangler secret put STRAVA_CLIENT_ID
 npx wrangler secret put STRAVA_CLIENT_SECRET
+npx wrangler secret put STRAVA_REFRESH_TOKEN
 npx wrangler secret put MCP_AUTH_PASSWORD
 pnpm deploy
 ```
